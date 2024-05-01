@@ -1,6 +1,15 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/dsh2dsh/cron/v3.svg)](https://pkg.go.dev/github.com/dsh2dsh/cron/v3)
 [![Go](https://github.com/dsh2dsh/cron/actions/workflows/go.yml/badge.svg)](https://github.com/dsh2dsh/cron/actions/workflows/go.yml)
 
+# About this fork
+
+This is a fork of [cron]. I created detached fork, because I need some changes
+and the upstream has last commit 4 years ago, so I believe my changes will never
+be merged. This fork has no breaking changes, just couple of optimizations and
+fixes.
+
+[cron]: https://github.com/robfig/cron
+
 # cron
 
 Cron V3 has been released!
@@ -46,7 +55,7 @@ New features:
   year field (optional in Quartz) is not supported.
 
 - Extensible, key/value logging via an interface that complies with
-  the https://github.com/go-logr/logr project.
+  the [go-logr]:(https://github.com/go-logr/logr) project.
 
 - The new Chain & JobWrapper types allow you to install "interceptors" to add
   cross-cutting behavior like the following:
@@ -96,8 +105,9 @@ cron.New(cron.WithChain(
   cron.Recover(logger),  // or use cron.DefaultLogger
 ))
 ```
-- In adding support for https://github.com/go-logr/logr, `cron.WithVerboseLogger` was
-  removed, since it is duplicative with the leveled logging.
+- In adding support for [go-logr]:(https://github.com/go-logr/logr),
+  `cron.WithVerboseLogger` was removed, since it is duplicative with the leveled
+  logging.
 
   UPDATING: Callers should use `WithLogger` and specify a logger that does not
   discard `Info` logs. For convenience, one is provided that wraps `*log.Logger`:
