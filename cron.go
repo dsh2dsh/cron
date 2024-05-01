@@ -250,19 +250,27 @@ func (c *Cron) run() {
 		c.logger.Info("schedule", "now", now, "entry", entry.ID, "next", entry.Next)
 	}
 
+	var timer *time.Timer
 	for {
 		// Determine the next entry to run.
 		slices.SortFunc(c.entries, func(a, b *Entry) int { return a.Cmp(b) })
 
-		var timer *time.Timer
+		var d time.Duration
 		if len(c.entries) == 0 || c.entries[0].Next.IsZero() {
 			// If there are no entries yet, just sleep - it still handles new entries
 			// and stop requests.
-			timer = time.NewTimer(100000 * time.Hour)
+			d = 100000 * time.Hour
 		} else {
-			timer = time.NewTimer(c.entries[0].Next.Sub(now))
+			d = c.entries[0].Next.Sub(now)
 		}
 
+		if timer == nil {
+			timer = time.NewTimer(d)
+		} else {
+			timer.Reset(d)
+		}
+
+		var stopTimer bool
 		for {
 			select {
 			case now = <-timer.C:
@@ -281,7 +289,7 @@ func (c *Cron) run() {
 				}
 
 			case newEntry := <-c.add:
-				timer.Stop()
+				stopTimer = true
 				now = c.now()
 				newEntry.Next = newEntry.Schedule.Next(now)
 				c.entries = append(c.entries, newEntry)
@@ -297,13 +305,16 @@ func (c *Cron) run() {
 				return
 
 			case id := <-c.remove:
-				timer.Stop()
+				stopTimer = true
 				now = c.now()
 				c.removeEntry(id)
 				c.logger.Info("removed", "entry", id)
 			}
-
 			break
+		}
+
+		if stopTimer && !timer.Stop() {
+			<-timer.C
 		}
 	}
 }
