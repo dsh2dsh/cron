@@ -219,7 +219,11 @@ func (c *Cron) Start() {
 		return
 	}
 	c.running = true
-	go c.run()
+	c.jobWaiter.Add(1)
+	go func() {
+		defer c.jobWaiter.Done()
+		c.run()
+	}()
 }
 
 // Run the cron scheduler, or no-op if already running.
