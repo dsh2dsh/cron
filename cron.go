@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -349,11 +350,7 @@ func (c *Cron) entrySnapshot() []Entry {
 }
 
 func (c *Cron) removeEntry(id EntryID) {
-	var entries []*Entry
-	for _, e := range c.entries {
-		if e.ID != id {
-			entries = append(entries, e)
-		}
-	}
-	c.entries = entries
+	c.entries = slices.DeleteFunc(c.entries, func(entry *Entry) bool {
+		return entry.ID == id
+	})
 }
