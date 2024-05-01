@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -56,18 +57,17 @@ type Parser struct {
 //
 // Examples
 //
-//  // Standard parser without descriptors
-//  specParser := NewParser(Minute | Hour | Dom | Month | Dow)
-//  sched, err := specParser.Parse("0 0 15 */3 *")
+//	// Standard parser without descriptors
+//	specParser := NewParser(Minute | Hour | Dom | Month | Dow)
+//	sched, err := specParser.Parse("0 0 15 */3 *")
 //
-//  // Same as above, just excludes time fields
-//  specParser := NewParser(Dom | Month | Dow)
-//  sched, err := specParser.Parse("15 */3 *")
+//	// Same as above, just excludes time fields
+//	specParser := NewParser(Dom | Month | Dow)
+//	sched, err := specParser.Parse("15 */3 *")
 //
-//  // Same as above, just makes Dow optional
-//  specParser := NewParser(Dom | Month | DowOptional)
-//  sched, err := specParser.Parse("15 */3")
-//
+//	// Same as above, just makes Dow optional
+//	specParser := NewParser(Dom | Month | DowOptional)
+//	sched, err := specParser.Parse("15 */3")
 func NewParser(options ParseOption) Parser {
 	optionals := 0
 	if options&DowOptional > 0 {
@@ -87,11 +87,11 @@ func NewParser(options ParseOption) Parser {
 // It accepts crontab specs and features configured by NewParser.
 func (p Parser) Parse(spec string) (Schedule, error) {
 	if len(spec) == 0 {
-		return nil, fmt.Errorf("empty spec string")
+		return nil, errors.New("empty spec string")
 	}
 
 	// Extract timezone if present
-	var loc = time.Local
+	loc := time.Local
 	if strings.HasPrefix(spec, "TZ=") || strings.HasPrefix(spec, "CRON_TZ=") {
 		var err error
 		i := strings.Index(spec, " ")
@@ -169,7 +169,7 @@ func normalizeFields(fields []string, options ParseOption) ([]string, error) {
 		optionals++
 	}
 	if optionals > 1 {
-		return nil, fmt.Errorf("multiple optionals may not be configured")
+		return nil, errors.New("multiple optionals may not be configured")
 	}
 
 	// Figure out how many fields we need
@@ -197,7 +197,7 @@ func normalizeFields(fields []string, options ParseOption) ([]string, error) {
 		case options&SecondOptional > 0:
 			fields = append([]string{defaults[0]}, fields...)
 		default:
-			return nil, fmt.Errorf("unknown optional field")
+			return nil, errors.New("unknown optional field")
 		}
 	}
 
@@ -247,7 +247,9 @@ func getField(field string, r bounds) (uint64, error) {
 }
 
 // getRange returns the bits indicated by the given expression:
-//   number | number "-" number [ "/" number ]
+//
+//	number | number "-" number [ "/" number ]
+//
 // or error parsing range.
 func getRange(expr string, r bounds) (uint64, error) {
 	var (
