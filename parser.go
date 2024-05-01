@@ -97,7 +97,7 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 		i := strings.Index(spec, " ")
 		eq := strings.Index(spec, "=")
 		if loc, err = time.LoadLocation(spec[eq+1 : i]); err != nil {
-			return nil, fmt.Errorf("provided bad location %s: %v", spec[eq+1:i], err)
+			return nil, fmt.Errorf("provided bad location %s: %w", spec[eq+1:i], err)
 		}
 		spec = strings.TrimSpace(spec[i:])
 	}
@@ -333,7 +333,7 @@ func parseIntOrName(expr string, names map[string]uint) (uint, error) {
 func mustParseInt(expr string) (uint, error) {
 	num, err := strconv.Atoi(expr)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse int from %s: %s", expr, err)
+		return 0, fmt.Errorf("failed to parse int from %s: %w", expr, err)
 	}
 	if num < 0 {
 		return 0, fmt.Errorf("negative number (%d) not allowed: %s", num, expr)
@@ -427,7 +427,7 @@ func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 	if strings.HasPrefix(descriptor, every) {
 		duration, err := time.ParseDuration(descriptor[len(every):])
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
+			return nil, fmt.Errorf("failed to parse duration %s: %w", descriptor, err)
 		}
 		return Every(duration), nil
 	}
