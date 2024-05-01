@@ -48,12 +48,9 @@ func TestFuncPanicRecovery(t *testing.T) {
 		panic("YOLO")
 	})
 
-	select {
-	case <-time.After(OneSecond):
-		if !strings.Contains(buf.String(), "YOLO") {
-			t.Error("expected a panic to be logged, got none")
-		}
-		return
+	time.Sleep(OneSecond)
+	if !strings.Contains(buf.String(), "YOLO") {
+		t.Error("expected a panic to be logged, got none")
 	}
 }
 
@@ -73,12 +70,9 @@ func TestJobPanicRecovery(t *testing.T) {
 	defer cron.Stop()
 	cron.AddJob("* * * * * ?", job)
 
-	select {
-	case <-time.After(OneSecond):
-		if !strings.Contains(buf.String(), "YOLO") {
-			t.Error("expected a panic to be logged, got none")
-		}
-		return
+	time.Sleep(OneSecond)
+	if !strings.Contains(buf.String(), "YOLO") {
+		t.Error("expected a panic to be logged, got none")
 	}
 }
 
@@ -210,10 +204,8 @@ func TestSnapshotEntries(t *testing.T) {
 	defer cron.Stop()
 
 	// Cron should fire in 2 seconds. After 1 second, call Entries.
-	select {
-	case <-time.After(OneSecond):
-		cron.Entries()
-	}
+	time.Sleep(OneSecond)
+	cron.Entries()
 
 	// Even though Entries was called, the cron should fire at the 2 second mark.
 	select {
@@ -388,7 +380,7 @@ func TestBlockingRun(t *testing.T) {
 	cron := newWithSeconds()
 	cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
-	var unblockChan = make(chan struct{})
+	unblockChan := make(chan struct{})
 
 	go func() {
 		cron.Run()
@@ -407,7 +399,7 @@ func TestBlockingRun(t *testing.T) {
 
 // Test that double-running is a no-op
 func TestStartNoop(t *testing.T) {
-	var tickChan = make(chan struct{}, 2)
+	tickChan := make(chan struct{}, 2)
 
 	cron := newWithSeconds()
 	cron.AddFunc("* * * * * ?", func() {
@@ -667,7 +659,6 @@ func TestStopAndWait(t *testing.T) {
 		case <-time.After(time.Millisecond):
 			t.Error("context not done even when cron Stop is completed")
 		}
-
 	})
 }
 
