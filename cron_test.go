@@ -486,7 +486,7 @@ func TestJob(t *testing.T) {
 	// Ensure the entries are in the right order.
 	expecteds := []string{"job2", "job4", "job5", "job1", "job3", "job0"}
 
-	var actuals []string
+	actuals := make([]string, 0, len(cron.Entries()))
 	for _, entry := range cron.Entries() {
 		actuals = append(actuals, entry.Job.(testJob).name)
 	}
