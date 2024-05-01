@@ -349,7 +349,10 @@ func (c *Cron) entrySnapshot() []Entry {
 }
 
 func (c *Cron) removeEntry(id EntryID) {
-	c.entries = slices.DeleteFunc(c.entries, func(entry *Entry) bool {
-		return entry.ID == id
+	i := slices.IndexFunc(c.entries, func(e *Entry) bool {
+		return e.ID == id
 	})
+	if i >= 0 {
+		c.entries = slices.Delete(c.entries, i, i+1)
+	}
 }
