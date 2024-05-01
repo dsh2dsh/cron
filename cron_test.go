@@ -45,7 +45,7 @@ func TestFuncPanicRecovery(t *testing.T) {
 	cron := New(WithParser(secondParser),
 		WithChain(Recover(newBufLogger(&buf))))
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 	_, err := cron.AddFunc("* * * * * ?", func() {
 		panic("YOLO")
 	})
@@ -70,7 +70,7 @@ func TestJobPanicRecovery(t *testing.T) {
 	cron := New(WithParser(secondParser),
 		WithChain(Recover(newBufLogger(&buf))))
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 	_, err := cron.AddJob("* * * * * ?", job)
 	require.NoError(t, err)
 
@@ -99,7 +99,7 @@ func TestStopCausesJobsToNotRun(t *testing.T) {
 
 	cron := newWithSeconds()
 	cron.Start()
-	cron.Stop()
+	<-cron.Stop().Done()
 	_, err := cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	require.NoError(t, err)
 
@@ -137,7 +137,7 @@ func TestAddWhileRunning(t *testing.T) {
 
 	cron := newWithSeconds()
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 	_, err := cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	require.NoError(t, err)
 
@@ -173,7 +173,7 @@ func TestRemoveBeforeRunning(t *testing.T) {
 	id, _ := cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	cron.Remove(id)
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond):
@@ -210,7 +210,7 @@ func TestSnapshotEntries(t *testing.T) {
 	_, err := cron.AddFunc("@every 2s", func() { wg.Done() })
 	require.NoError(t, err)
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	// Cron should fire in 2 seconds. After 1 second, call Entries.
 	time.Sleep(OneSecond)
@@ -249,7 +249,7 @@ func TestMultipleEntries(t *testing.T) {
 	cron.Remove(id1)
 	cron.Start()
 	cron.Remove(id2)
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond):
@@ -297,7 +297,7 @@ func TestRunningMultipleSchedules(t *testing.T) {
 	cron.Schedule(Every(time.Hour), FuncJob(func() {}))
 
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(2 * OneSecond):
@@ -326,7 +326,7 @@ func TestLocalTimezone(t *testing.T) {
 	_, err := cron.AddFunc(spec, func() { wg.Done() })
 	require.NoError(t, err)
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond * 2):
@@ -361,7 +361,7 @@ func TestNonLocalTimezone(t *testing.T) {
 	_, err = cron.AddFunc(spec, func() { wg.Done() })
 	require.NoError(t, err)
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond * 2):
@@ -374,7 +374,7 @@ func TestNonLocalTimezone(t *testing.T) {
 // blocking the stop channel.
 func TestStopWithoutStart(t *testing.T) {
 	cron := New()
-	cron.Stop()
+	<-cron.Stop().Done()
 }
 
 type testJob struct {
@@ -410,7 +410,7 @@ func TestBlockingRun(t *testing.T) {
 		cron.Run()
 		close(unblockChan)
 	}()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond):
@@ -432,7 +432,7 @@ func TestStartNoop(t *testing.T) {
 	require.NoError(t, err)
 
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	// Wait for the first firing to ensure the runner is going
 	<-tickChan
@@ -475,7 +475,7 @@ func TestJob(t *testing.T) {
 	}
 
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	select {
 	case <-time.After(OneSecond):
@@ -543,7 +543,7 @@ func TestScheduleAfterRemoval(t *testing.T) {
 	}))
 
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 
 	// the first run might be any length of time 0 - 1s, since the schedule
 	// rounds to the second. wait for the first run to true up.
@@ -570,7 +570,7 @@ func TestJobWithZeroTimeDoesNotRun(t *testing.T) {
 	require.NoError(t, err)
 	cron.Schedule(new(ZeroSchedule), FuncJob(func() { t.Error("expected zero task will not run") }))
 	cron.Start()
-	defer cron.Stop()
+	defer func() { <-cron.Stop().Done() }()
 	<-time.After(OneSecond)
 	if atomic.LoadInt64(&calls) != 1 {
 		t.Errorf("called %d times, expected 1\n", calls)
@@ -706,7 +706,7 @@ func TestMultiThreadedStartAndStop(t *testing.T) {
 	cron := New()
 	go cron.Run()
 	time.Sleep(2 * time.Millisecond)
-	cron.Stop()
+	<-cron.Stop().Done()
 }
 
 func wait(wg *sync.WaitGroup) chan bool {
@@ -721,7 +721,7 @@ func wait(wg *sync.WaitGroup) chan bool {
 func stop(cron *Cron) chan bool {
 	ch := make(chan bool)
 	go func() {
-		cron.Stop()
+		<-cron.Stop().Done()
 		ch <- true
 	}()
 	return ch
