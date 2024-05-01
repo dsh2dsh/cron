@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestWithLocation(t *testing.T) {
@@ -30,7 +32,8 @@ func TestWithVerboseLogger(t *testing.T) {
 		t.Error("expected provided logger")
 	}
 
-	c.AddFunc("@every 1s", func() {})
+	_, err := c.AddFunc("@every 1s", func() {})
+	require.NoError(t, err)
 	c.Start()
 	time.Sleep(OneSecond)
 	c.Stop()
