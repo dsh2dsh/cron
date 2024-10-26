@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,4 +43,16 @@ func TestWithVerboseLogger(t *testing.T) {
 		!strings.Contains(out, "run,") {
 		t.Error("expected to see some actions, got:", out)
 	}
+}
+
+func TestWithTimer(t *testing.T) {
+	var called bool
+	timerFn := func(d time.Duration) Timer {
+		called = true
+		return newStdTimer(d)
+	}
+	c := New(WithTimer(timerFn))
+	c.Start()
+	<-c.Stop().Done()
+	assert.True(t, called)
 }

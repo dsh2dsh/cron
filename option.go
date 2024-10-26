@@ -1,8 +1,6 @@
 package cron
 
-import (
-	"time"
-)
+import "time"
 
 // Option represents a modification to the default behavior of a Cron.
 type Option func(*Cron)
@@ -42,4 +40,10 @@ func WithLogger(logger Logger) Option {
 	return func(c *Cron) {
 		c.logger = logger
 	}
+}
+
+// WithTimer specifies a [Timer] creator. If not specified, [time.Timer] will be
+// used by default. Refer to the [Timer] documentation for details.
+func WithTimer(fn func(time.Duration) Timer) Option {
+	return func(c *Cron) { c.timerFn = fn }
 }

@@ -24,6 +24,8 @@ type Cron struct {
 	parser    ScheduleParser
 	nextID    EntryID
 	jobWaiter sync.WaitGroup
+
+	timerFn func(d time.Duration) Timer
 }
 
 // ScheduleParser is an interface for schedule spec parsers that return a Schedule
@@ -123,6 +125,7 @@ func New(opts ...Option) *Cron {
 		logger:    DefaultLogger,
 		location:  time.Local,
 		parser:    standardParser,
+		timerFn:   newStdTimer,
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -250,7 +253,7 @@ func (c *Cron) run() {
 		c.logger.Info("schedule", "now", now, "entry", entry.ID, "next", entry.Next)
 	}
 
-	var timer *time.Timer
+	var timer Timer
 	for {
 		// Determine the next entry to run.
 		slices.SortFunc(c.entries, func(a, b *Entry) int { return a.Cmp(b) })
@@ -265,7 +268,7 @@ func (c *Cron) run() {
 		}
 
 		if timer == nil {
-			timer = time.NewTimer(d)
+			timer = c.timerFn(d)
 		} else {
 			timer.Reset(d)
 		}
@@ -273,7 +276,7 @@ func (c *Cron) run() {
 		var stopTimer bool
 		for {
 			select {
-			case now = <-timer.C:
+			case now = <-timer.C():
 				now = now.In(c.location)
 				c.logger.Info("wake", "now", now)
 
@@ -314,7 +317,7 @@ func (c *Cron) run() {
 		}
 
 		if stopTimer && !timer.Stop() {
-			<-timer.C
+			<-timer.C()
 		}
 	}
 }
