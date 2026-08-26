@@ -205,7 +205,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob.Run()
 		}
 		time.Sleep(200 * time.Millisecond)
@@ -222,7 +222,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		chain := NewChain(SkipIfStillRunning(DiscardLogger))
 		wrappedJob1 := chain.Then(&j1)
 		wrappedJob2 := chain.Then(&j2)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob1.Run()
 			go wrappedJob2.Run()
 		}
